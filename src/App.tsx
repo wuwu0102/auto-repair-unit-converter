@@ -1,23 +1,10 @@
 import { useMemo, useState } from 'react';
 import { categories, convertValue } from './conversions';
 
-type PressureMode = 'gauge' | 'absolute' | 'vacuum';
 type ElectricalField = 'V' | 'A' | 'Ohm' | 'W';
-
-const ATM_KPA = 101.325;
+type PressureDirection = 'positive' | 'negative';
 
 const pressureUnits = ['mmbar', 'Bar', 'Kpa', 'Hpa', 'Mpa', 'Psi', 'INCH HG.', 'cmhg'] as const;
-
-const toKpa = {
-  mmbar: (v: number) => v * 0.1,
-  Bar: (v: number) => v * 100,
-  Kpa: (v: number) => v,
-  Hpa: (v: number) => v * 0.1,
-  Mpa: (v: number) => v * 1000,
-  Psi: (v: number) => v * 6.89475729,
-  'INCH HG.': (v: number) => v * 3.38638867,
-  cmhg: (v: number) => v * 1.33322368
-} as const;
 
 const electricalUnitOptions = {
   V: [{ label: 'mV', factor: 0.001 }, { label: 'V', factor: 1 }, { label: 'kV', factor: 1000 }],
@@ -39,7 +26,7 @@ export default function App() {
 
   const [inputValue, setInputValue] = useState('');
   const [fromUnit, setFromUnit] = useState(categories[0]?.units[0] ?? '');
-  const [pressureMode, setPressureMode] = useState<PressureMode>('gauge');
+  const [pressureDirection, setPressureDirection] = useState<PressureDirection>('positive');
 
   const [electricalValues, setElectricalValues] = useState<Record<ElectricalField, string>>({ V: '', A: '', Ohm: '', W: '' });
   const [electricalUnits, setElectricalUnits] = useState<ElectricalUnitSelections>({ V: 'V', A: 'A', Ohm: 'Ω', W: 'W' });
@@ -52,17 +39,15 @@ export default function App() {
     return activeCategory.units.map((unit) => ({ unit, value: convertValue(activeCategory, numericValue, fromUnit, unit) }));
   }, [activeCategory, canConvert, fromUnit, numericValue]);
 
-  const pressureComputed = useMemo(() => {
-    if (activeCategory?.key !== 'pressure') return null;
-    if (!canConvert || numericValue < 0) return null;
-
-    const chosen = fromUnit as keyof typeof toKpa;
-    const gaugeKpa = toKpa[chosen](numericValue);
-    const absoluteKpa = gaugeKpa + ATM_KPA;
-    const vacuumKpa = Math.max(0, ATM_KPA - absoluteKpa);
-
-    return { gaugeKpa, absoluteKpa, vacuumKpa };
-  }, [activeCategory?.key, canConvert, fromUnit, numericValue]);
+  const pressureResults = useMemo(() => {
+    if (activeCategory?.key !== 'pressure') return [];
+    if (!canConvert || numericValue < 0) return [];
+    const sign = pressureDirection === 'negative' ? -1 : 1;
+    return pressureUnits.map((unit) => ({
+      unit,
+      value: convertValue(activeCategory, numericValue, fromUnit, unit) * sign
+    }));
+  }, [activeCategory, canConvert, fromUnit, numericValue, pressureDirection]);
 
   const electricalComputed = useMemo(() => {
     const parsed: Partial<Record<ElectricalField, number>> = {};
@@ -121,7 +106,7 @@ export default function App() {
     setActiveCategoryKey(next.key);
     setFromUnit(next.units[0]);
     setInputValue('');
-    setPressureMode('gauge');
+    setPressureDirection('positive');
     setElectricalValues({ V: '', A: '', Ohm: '', W: '' });
     setElectricalUnits({ V: 'V', A: 'A', Ohm: 'Ω', W: 'W' });
   };
@@ -150,30 +135,17 @@ export default function App() {
 
         {isPressure && (
           <>
+            <div className="pressure-direction">
+              <span>壓力方向</span>
+              <div className="toggle-row">{(['positive', 'negative'] as PressureDirection[]).map((direction) => <button key={direction} className={pressureDirection === direction ? 'mode-btn active' : 'mode-btn'} onClick={() => setPressureDirection(direction)}>{direction === 'positive' ? '正壓' : '負壓'}</button>)}</div>
+            </div>
             <div className="controls">
               <input type="text" pattern="[0-9.]*" inputMode="decimal" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="請輸入數值（正數）" />
               <select value={fromUnit} onChange={(e) => setFromUnit(e.target.value)}>{pressureUnits.map((u) => <option key={u} value={u}>{u}</option>)}</select>
               <button onClick={() => setInputValue('')}>一鍵清除</button>
             </div>
-            <div className="results">{canConvert ? results.map((r) => <div key={r.unit} className="result"><span>{r.unit}</span><strong>{formatNumber(r.value)}</strong></div>) : <p className="empty-result">請輸入有效數值（不可小於 0）</p>}</div>
-
-            <section className="assist-card">
-              <h3>壓力類型輔助說明</h3>
-              <p>表壓：一般壓力錶讀值，預設使用這個。</p>
-              <p>絕對壓力：表壓 + 大氣壓。</p>
-              <p>負壓：低於大氣壓的表壓，手機不用輸入負號。</p>
-              <p>本頁主要為壓力單位換算；若為負壓，請視為真空度數值，表壓為負值。</p>
-
-              <div className="toggle-row">{(['gauge', 'absolute', 'vacuum'] as PressureMode[]).map((m) => <button key={m} className={pressureMode === m ? 'mode-btn active' : 'mode-btn'} onClick={() => setPressureMode(m)}>{m === 'gauge' ? '表壓' : m === 'absolute' ? '絕對壓力' : '負壓模式'}</button>)}</div>
-
-              {pressureComputed ? (
-                <div className="results">
-                  <div className="result"><span>表壓（Gauge）</span><strong>{formatNumber(pressureComputed.gaugeKpa)} kPa</strong></div>
-                  <div className="result"><span>絕對壓力（Absolute）</span><strong>{formatNumber(pressureComputed.absoluteKpa)} kPa</strong></div>
-                  <div className="result"><span>真空度（Vacuum）</span><strong>{formatNumber(pressureComputed.vacuumKpa)} kPa vacuum</strong></div>
-                </div>
-              ) : null}
-            </section>
+            <p className="note gauge-note">輸出值為表壓；負壓會以負號顯示。</p>
+            <div className="results">{canConvert ? pressureResults.map((r) => <div key={r.unit} className="result"><span>{r.unit}</span><strong>{formatNumber(r.value)}</strong></div>) : <p className="empty-result">請輸入有效數值（不可小於 0）</p>}</div>
           </>
         )}
 

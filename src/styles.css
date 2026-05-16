@@ -172,9 +172,9 @@ textarea {
 
 .toggle-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.4rem;
-  margin: 0.4rem 0;
+  margin: 0.3rem 0 0;
 }
 
 .mode-btn {
@@ -204,12 +204,18 @@ textarea {
   min-width: 0;
 }
 
-.assist-card {
-  margin-top: 0.7rem;
-  border-top: 1px solid #c4d8ee;
-  padding-top: 0.55rem;
+.pressure-direction {
+  margin-bottom: 0.35rem;
 }
 
-.assist-card h3 {
-  margin-top: 0;
+.pressure-direction span {
+  display: block;
+  font-size: 0.88rem;
+  color: #20456d;
+  font-weight: 700;
+}
+
+.gauge-note {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
 }

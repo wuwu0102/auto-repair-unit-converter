@@ -5,7 +5,10 @@ type DisplayMode = 'large' | 'compact';
 
 export default function App() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('large');
-  const [activeCategory, setActiveCategory] = useState(categories[0]);
+  const primaryCategories = categories.filter((cat) => cat.isPrimary);
+  const advancedCategories = categories.filter((cat) => !cat.isPrimary);
+
+  const [activeCategory, setActiveCategory] = useState(primaryCategories[0] ?? categories[0]);
   const [inputValue, setInputValue] = useState('');
   const [fromUnit, setFromUnit] = useState(activeCategory.units[0]);
 
@@ -40,10 +43,19 @@ export default function App() {
       </header>
 
       <section className="card">
-        <h2>分類</h2>
+        <h2>主要功能</h2>
         <div className="grid">
-          {categories.map((cat) => (
+          {primaryCategories.map((cat) => (
             <button key={cat.key} className={cat.key === activeCategory.key ? 'active' : ''} onClick={() => updateCategory(cat.key)}>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <h3>進階功能 / 其他換算</h3>
+        <div className="grid advanced-grid">
+          {advancedCategories.map((cat) => (
+            <button key={cat.key} className={cat.key === activeCategory.key ? 'active' : 'secondary'} onClick={() => updateCategory(cat.key)}>
               {cat.label}
             </button>
           ))}
@@ -52,6 +64,7 @@ export default function App() {
 
       <section className="card">
         <h2>{activeCategory.label}</h2>
+        {activeCategory.note ? <p className="note">{activeCategory.note}</p> : null}
         <div className="controls">
           <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="輸入數值" inputMode="decimal" />
           <select value={fromUnit} onChange={(e) => setFromUnit(e.target.value)}>

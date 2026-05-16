@@ -47,7 +47,7 @@ button, input, select, textarea {
   max-width: 100%;
   box-sizing: border-box;
   border-radius: 10px;
-  font-size: 1rem;
+  font-size: 16px;
 }
 
 button {
@@ -185,4 +185,21 @@ textarea {
 
 .mode-btn.active {
   background: #0d3b72;
+}
+
+
+.electrical-controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.electrical-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, 110px);
+  gap: 0.42rem;
+  width: 100%;
+}
+
+.electrical-row select,
+.electrical-row input {
+  min-width: 0;
 }

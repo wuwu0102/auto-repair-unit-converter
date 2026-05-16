@@ -38,12 +38,12 @@ h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
 h3 { margin: 0.65rem 0 0.4rem; font-size: 0.92rem; color: #35557a; }
 p { margin: 0.2rem 0; font-size: 0.88rem; }
 
-button, input, select {
+button, input, select, textarea {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   border-radius: 10px;
-  font-size: 0.93rem;
+  font-size: 1rem;
 }
 
 button {
@@ -54,7 +54,7 @@ button {
   padding: 0.62rem 0.7rem;
 }
 
-input, select {
+input, select, textarea {
   background: white;
   border: 1px solid #b9cce4;
   padding: 0.54rem 0.72rem;
@@ -62,7 +62,7 @@ input, select {
   min-width: 0;
 }
 
-select, option { font-size: 0.9rem; }
+select, option, textarea { font-size: 1rem; }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.44rem; }
 .secondary { background: #5f87b7; }
@@ -91,7 +91,7 @@ select, option { font-size: 0.9rem; }
   padding: 0.45rem 0.55rem;
   min-height: 2rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 0.65rem;
 }
@@ -100,13 +100,13 @@ select, option { font-size: 0.9rem; }
   min-width: 0;
   font-size: 0.88rem;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .result strong {
   min-width: 0;
-  font-size: clamp(0.82rem, 2.8vw, 0.92rem);
+  font-size: 0.95rem;
   overflow-wrap: anywhere;
   word-break: break-word;
   text-align: right;
@@ -137,8 +137,9 @@ select, option { font-size: 0.9rem; }
 
   button,
   input,
-  select {
-    font-size: 0.87rem;
+  select,
+  textarea {
+    font-size: 1rem;
   }
 
   .result {
@@ -146,6 +147,6 @@ select, option { font-size: 0.9rem; }
     gap: 0.48rem;
   }
 
-  .result span { font-size: 0.82rem; }
-  .result strong { font-size: clamp(0.78rem, 3.2vw, 0.86rem); }
+  .result span { font-size: 0.85rem; }
+  .result strong { font-size: 0.9rem; }
 }

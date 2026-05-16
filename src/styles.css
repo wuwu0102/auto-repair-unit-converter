@@ -1,22 +1,73 @@
 :root { font-family: Arial, sans-serif; color: #102034; background: #fff; }
 * { box-sizing: border-box; }
 body { margin: 0; }
-.app { max-width: 760px; margin: 0 auto; padding: 1rem; }
-.card { background: #eaf4ff; border-radius: 16px; padding: 1rem; margin-bottom: 1rem; }
-h1 { margin: 0 0 .5rem; font-size: 1.8rem; }
-h2 { margin: 0 0 .75rem; }
-button, input, select { width: 100%; border: none; border-radius: 12px; padding: .9rem; font-size: inherit; }
-button { background: #1f5fae; color: white; font-weight: 700; margin-top: .5rem; }
-button.active { background: #0d3b72; }
-input, select { margin-bottom: .5rem; background: white; border: 1px solid #b9cce4; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-.results { display: grid; gap: .5rem; }
-.result { background: white; border-radius: 10px; padding: .75rem; display: flex; justify-content: space-between; }
-.large { font-size: 20px; }
-.compact { font-size: 16px; }
-@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
 
-h3 { margin: 1rem 0 .5rem; font-size: 1rem; color: #35557a; }
+.app { max-width: 560px; margin: 0 auto; padding: 0.65rem; }
+.card { background: #eaf4ff; border-radius: 14px; padding: 0.7rem; margin-bottom: 0.65rem; }
+
+.hero { text-align: center; }
+h1 { margin: 0 0 0.35rem; font-size: 1.2rem; line-height: 1.25; }
+h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+h3 { margin: 0.65rem 0 0.4rem; font-size: 0.92rem; color: #35557a; }
+p { margin: 0.2rem 0; font-size: 0.88rem; }
+
+button, input, select {
+  width: 100%;
+  border-radius: 10px;
+  font-size: 0.93rem;
+}
+
+button {
+  border: none;
+  background: #1f5fae;
+  color: white;
+  font-weight: 700;
+  padding: 0.62rem 0.7rem;
+}
+
+input, select {
+  background: white;
+  border: 1px solid #b9cce4;
+  padding: 0.58rem 0.62rem;
+  height: 2.3rem;
+}
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.44rem; }
 .secondary { background: #5f87b7; }
-.advanced-grid button { font-size: .9em; padding: .7rem; }
-.note { margin: 0 0 .5rem; color: #20456d; font-weight: 600; }
+.advanced-grid button { font-size: 0.86rem; }
+
+.page-header { padding: 0.6rem 0.7rem; }
+.back-button {
+  width: auto;
+  margin-bottom: 0.45rem;
+  padding: 0.42rem 0.62rem;
+  font-size: 0.84rem;
+  background: #0d3b72;
+}
+
+.note { margin-top: 0.25rem; color: #20456d; font-weight: 600; font-size: 0.84rem; }
+.formula { margin-top: 0.2rem; font-weight: 700; font-size: 0.85rem; }
+.converter-card { padding: 0.65rem; }
+.controls { display: grid; gap: 0.42rem; }
+
+.results { display: grid; gap: 0.36rem; margin-top: 0.5rem; }
+.result {
+  background: white;
+  border-radius: 9px;
+  padding: 0.45rem 0.55rem;
+  min-height: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem;
+}
+.result span { font-size: 0.88rem; }
+.result strong { font-size: 0.92rem; }
+.empty-result { color: #2d4f75; font-size: 0.85rem; }
+
+@media (max-width: 420px) {
+  .app { max-width: 100%; padding: 0.55rem; }
+  .grid { grid-template-columns: 1fr; }
+  h1 { font-size: 1.1rem; }
+  h2 { font-size: 1rem; }
+}

@@ -169,3 +169,20 @@ textarea {
   .result span { font-size: 0.85rem; }
   .result strong { font-size: 0.9rem; }
 }
+
+.toggle-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0.4rem 0;
+}
+
+.mode-btn {
+  background: #5f87b7;
+  padding: 0.5rem 0.35rem;
+  font-size: 0.9rem;
+}
+
+.mode-btn.active {
+  background: #0d3b72;
+}

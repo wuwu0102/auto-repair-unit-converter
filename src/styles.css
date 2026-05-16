@@ -1,5 +1,9 @@
 :root { font-family: Arial, sans-serif; color: #102034; background: #fff; }
 
+* {
+  box-sizing: border-box;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   max-width: 100%;
@@ -62,7 +66,23 @@ input, select, textarea {
   min-width: 0;
 }
 
-select, option, textarea { font-size: 1rem; }
+select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-left: 16px;
+  padding-right: 48px;
+  font-size: 16px;
+  line-height: 1.2;
+  text-indent: 0;
+  appearance: auto;
+  -webkit-appearance: menulist;
+}
+
+option,
+textarea {
+  font-size: 1rem;
+}
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.44rem; }
 .secondary { background: #5f87b7; }
@@ -91,7 +111,7 @@ select, option, textarea { font-size: 1rem; }
   padding: 0.45rem 0.55rem;
   min-height: 2rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(80px, 1fr) minmax(0, 2fr);
   align-items: center;
   gap: 0.65rem;
 }
@@ -99,7 +119,6 @@ select, option, textarea { font-size: 1rem; }
 .result span {
   min-width: 0;
   font-size: 0.88rem;
-  overflow: hidden;
   overflow-wrap: anywhere;
   word-break: break-word;
 }

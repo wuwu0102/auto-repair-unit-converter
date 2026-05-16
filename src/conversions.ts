@@ -37,10 +37,9 @@ export const categories: ConverterCategory[] = [
       Mpa: 10,
       Psi: 0.0689475729,
       'INCH HG.': 0.0338638867,
-      '-kpa': 0.01,
       cmhg: 0.0133322368
     },
-    { isPrimary: true, note: '要分表壓力跟絕對壓力還有負壓' }
+    { isPrimary: true, note: '本頁主要為壓力單位換算；若為負壓，請視為真空度數值，表壓為負值。' }
   ),
   linearCategory('power', 'D. 功率', { Kw: 1, 'Hp(馬力)': 0.745699872 }, { isPrimary: true }),
   linearCategory('torque', 'E. 扭力', { 'N·m': 1, 'kgf·m': 9.80665, 'lb·ft': 1.35581795, 'lb·in': 0.112984829 }, { isPrimary: true }),

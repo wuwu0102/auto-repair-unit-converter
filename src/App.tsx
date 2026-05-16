@@ -2,13 +2,11 @@ import { useMemo, useState } from 'react';
 import { categories, convertValue } from './conversions';
 
 type PressureMode = 'gauge' | 'absolute' | 'vacuum';
-type SignDirection = 'positive' | 'negative';
-
 type ElectricalField = 'V' | 'A' | 'Ohm' | 'W';
 
 const ATM_KPA = 101.325;
 
-const pressureUnits = ['mmbar', 'Bar', 'Kpa', 'Hpa', 'Mpa', 'Psi', 'INCH HG.', '-kpa', 'cmhg'];
+const pressureUnits = ['mmbar', 'Bar', 'Kpa', 'Hpa', 'Mpa', 'Psi', 'INCH HG.', 'cmhg'] as const;
 
 const toKpa = {
   mmbar: (v: number) => v * 0.1,
@@ -18,9 +16,17 @@ const toKpa = {
   Mpa: (v: number) => v * 1000,
   Psi: (v: number) => v * 6.89475729,
   'INCH HG.': (v: number) => v * 3.38638867,
-  '-kpa': (v: number) => v,
   cmhg: (v: number) => v * 1.33322368
 } as const;
+
+const electricalUnitOptions = {
+  V: [{ label: 'mV', factor: 0.001 }, { label: 'V', factor: 1 }, { label: 'kV', factor: 1000 }],
+  A: [{ label: 'mA', factor: 0.001 }, { label: 'A', factor: 1 }],
+  Ohm: [{ label: 'mΩ', factor: 0.001 }, { label: 'Ω', factor: 1 }, { label: 'kΩ', factor: 1000 }, { label: 'MΩ', factor: 1000000 }],
+  W: [{ label: 'mW', factor: 0.001 }, { label: 'W', factor: 1 }, { label: 'kW', factor: 1000 }]
+} as const;
+
+type ElectricalUnitSelections = Record<ElectricalField, string>;
 
 const formatNumber = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 6 });
 
@@ -34,9 +40,9 @@ export default function App() {
   const [inputValue, setInputValue] = useState('');
   const [fromUnit, setFromUnit] = useState(categories[0]?.units[0] ?? '');
   const [pressureMode, setPressureMode] = useState<PressureMode>('gauge');
-  const [pressureDirection, setPressureDirection] = useState<SignDirection>('positive');
 
   const [electricalValues, setElectricalValues] = useState<Record<ElectricalField, string>>({ V: '', A: '', Ohm: '', W: '' });
+  const [electricalUnits, setElectricalUnits] = useState<ElectricalUnitSelections>({ V: 'V', A: 'A', Ohm: 'Ω', W: 'W' });
 
   const numericValue = Number(inputValue);
   const canConvert = inputValue.trim() !== '' && Number.isFinite(numericValue);
@@ -50,7 +56,6 @@ export default function App() {
     if (activeCategory?.key !== 'pressure') return null;
     if (inputValue.trim() === '' || !Number.isFinite(numericValue) || numericValue < 0) return null;
 
-    const directionFactor = pressureDirection === 'negative' ? -1 : 1;
     const chosen = fromUnit as keyof typeof toKpa;
     const baseInput = numericValue;
 
@@ -67,19 +72,24 @@ export default function App() {
       return { modeLabel: '負壓換算', gaugeKpa, absoluteKpa, vacuumKpa };
     }
 
-    const gaugeInput = toKpa[chosen](baseInput) * directionFactor;
-    const absoluteKpa = gaugeInput + ATM_KPA;
-    return { modeLabel: '表壓換算', gaugeKpa: gaugeInput, absoluteKpa, vacuumKpa: gaugeInput < 0 ? Math.abs(gaugeInput) : 0 };
-  }, [activeCategory?.key, fromUnit, inputValue, numericValue, pressureDirection, pressureMode]);
+    const gaugeKpa = toKpa[chosen](baseInput);
+    const absoluteKpa = gaugeKpa + ATM_KPA;
+    return { modeLabel: '表壓換算', gaugeKpa, absoluteKpa, vacuumKpa: 0 };
+  }, [activeCategory?.key, fromUnit, inputValue, numericValue, pressureMode]);
 
   const electricalComputed = useMemo(() => {
     const parsed: Partial<Record<ElectricalField, number>> = {};
-    (Object.keys(electricalValues) as ElectricalField[]).forEach((k) => {
-      const text = electricalValues[k].trim();
+
+    (Object.keys(electricalValues) as ElectricalField[]).forEach((field) => {
+      const text = electricalValues[field].trim();
       if (!text) return;
       const n = Number(text);
-      if (Number.isFinite(n) && n >= 0) parsed[k] = n;
+      if (!Number.isFinite(n) || n < 0) return;
+      const selected = electricalUnitOptions[field].find((option) => option.label === electricalUnits[field]);
+      if (!selected) return;
+      parsed[field] = n * selected.factor;
     });
+
     const entries = Object.entries(parsed) as [ElectricalField, number][];
     if (entries.length !== 2) return null;
 
@@ -110,7 +120,13 @@ export default function App() {
     if ([V, A, Ohm, W].some((v) => v === undefined || !Number.isFinite(v) || v < 0)) return null;
 
     return { V: V!, A: A!, Ohm: Ohm!, W: W! };
-  }, [electricalValues]);
+  }, [electricalUnits, electricalValues]);
+
+  const formatElectricalBySelectedUnit = (field: ElectricalField, baseValue: number) => {
+    const selected = electricalUnitOptions[field].find((option) => option.label === electricalUnits[field]);
+    if (!selected) return `${formatNumber(baseValue)}`;
+    return `${formatNumber(baseValue / selected.factor)} ${selected.label}`;
+  };
 
   const enterCategory = (key: string) => {
     const next = categories.find((cat) => cat.key === key);
@@ -119,8 +135,8 @@ export default function App() {
     setFromUnit(next.units[0]);
     setInputValue('');
     setPressureMode('gauge');
-    setPressureDirection('positive');
     setElectricalValues({ V: '', A: '', Ohm: '', W: '' });
+    setElectricalUnits({ V: 'V', A: 'A', Ohm: 'Ω', W: 'W' });
   };
 
   const backToHome = () => {
@@ -147,22 +163,18 @@ export default function App() {
 
         {isPressure && (
           <>
-            <p className="note">手機不用輸入負號，請用正負選擇切換。</p>
+            <p className="note">請先選擇表壓、絕對壓力或負壓模式。手機不用輸入負號。</p>
             <div className="toggle-row">{(['gauge', 'absolute', 'vacuum'] as PressureMode[]).map((m) => <button key={m} className={pressureMode === m ? 'mode-btn active' : 'mode-btn'} onClick={() => setPressureMode(m)}>{m === 'gauge' ? '表壓' : m === 'absolute' ? '絕對壓力' : '負壓'}</button>)}</div>
             <div className="controls">
               <input type="text" pattern="[0-9.]*" inputMode="decimal" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="請輸入數值（正數）" />
               <select value={fromUnit} onChange={(e) => setFromUnit(e.target.value)}>{pressureUnits.map((u) => <option key={u} value={u}>{u}</option>)}</select>
-              {pressureMode !== 'absolute' && <select value={pressureDirection} onChange={(e) => setPressureDirection(e.target.value as SignDirection)}>
-                <option value="positive">正壓 / 加壓</option><option value="negative">負壓 / 真空</option></select>}
               <button onClick={() => setInputValue('')}>一鍵清除</button>
             </div>
-            {fromUnit === '-kpa' && pressureMode !== 'vacuum' ? <p className="note">-kpa 建議用於負壓模式。</p> : null}
             <div className="results">
-              {!pressureComputed ? <p className="empty-result">請輸入有效數值（絕對壓力不可小於 0）</p> : <>
+              {!pressureComputed ? <p className="empty-result">請輸入有效數值（不可小於 0）</p> : <>
                 <div className="result"><span>{pressureComputed.modeLabel}</span><strong>{formatNumber(pressureComputed.gaugeKpa)} kPa (Gauge)</strong></div>
                 <div className="result"><span>對應絕對壓力</span><strong>{formatNumber(pressureComputed.absoluteKpa)} kPa (Absolute)</strong></div>
                 <div className="result"><span>真空度</span><strong>{formatNumber(Math.abs(pressureComputed.vacuumKpa))} kPa vacuum</strong></div>
-                {pressureMode === 'vacuum' && <div className="result"><span>負壓</span><strong>{formatNumber(pressureComputed.gaugeKpa)} kPa</strong></div>}
                 {pressureMode === 'vacuum' && pressureComputed.vacuumKpa > ATM_KPA ? <p className="empty-result">超過理論真空，請檢查輸入值</p> : null}
               </>}
             </div>
@@ -172,12 +184,23 @@ export default function App() {
         {isElectrical && (
           <>
             <p className="formula">Ohm’s Law 快速計算：輸入任意兩個值，自動算出另外兩個值。</p>
-            <div className="controls">{(['V', 'A', 'Ohm', 'W'] as ElectricalField[]).map((field) => <input key={field} type="text" pattern="[0-9.]*" inputMode="decimal" placeholder={`${field === 'Ohm' ? '電阻 Ω' : field === 'V' ? '電壓 V' : field === 'A' ? '電流 A' : '功率 W'}`} value={electricalValues[field]} onChange={(e) => setElectricalValues((prev) => ({ ...prev, [field]: e.target.value }))} />)}<button onClick={() => setElectricalValues({ V: '', A: '', Ohm: '', W: '' })}>一鍵清除</button></div>
+            <div className="controls electrical-controls">{(['V', 'A', 'Ohm', 'W'] as ElectricalField[]).map((field) => (
+              <div key={field} className="electrical-row">
+                <input type="text" pattern="[0-9.]*" inputMode="decimal" placeholder={field === 'Ohm' ? '電阻' : field === 'V' ? '電壓' : field === 'A' ? '電流' : '功率'} value={electricalValues[field]} onChange={(e) => setElectricalValues((prev) => ({ ...prev, [field]: e.target.value }))} />
+                <select value={electricalUnits[field]} onChange={(e) => setElectricalUnits((prev) => ({ ...prev, [field]: e.target.value }))}>
+                  {electricalUnitOptions[field].map((option) => <option key={option.label} value={option.label}>{option.label}</option>)}
+                </select>
+              </div>
+            ))}<button onClick={() => setElectricalValues({ V: '', A: '', Ohm: '', W: '' })}>一鍵清除</button></div>
             <div className="results">{!electricalComputed ? <p className="empty-result">請輸入任意兩個有效數值。</p> : <>
-              <div className="result"><span>電壓 V</span><strong>{formatNumber(electricalComputed.V)} V / {formatNumber(electricalComputed.V * 1000)} mV</strong></div>
-              <div className="result"><span>電流 A</span><strong>{formatNumber(electricalComputed.A)} A / {formatNumber(electricalComputed.A * 1000)} mA</strong></div>
-              <div className="result"><span>電阻 Ω</span><strong>{formatNumber(electricalComputed.Ohm)} Ω / {formatNumber(electricalComputed.Ohm * 1000)} mΩ / {formatNumber(electricalComputed.Ohm / 1000)} kΩ</strong></div>
-              <div className="result"><span>功率 W</span><strong>{formatNumber(electricalComputed.W)} W / {formatNumber(electricalComputed.W / 1000)} kW</strong></div>
+              <div className="result"><span>電壓</span><strong>{formatElectricalBySelectedUnit('V', electricalComputed.V)}</strong></div>
+              <div className="result"><span>電流</span><strong>{formatElectricalBySelectedUnit('A', electricalComputed.A)}</strong></div>
+              <div className="result"><span>電阻</span><strong>{formatElectricalBySelectedUnit('Ohm', electricalComputed.Ohm)}</strong></div>
+              <div className="result"><span>功率</span><strong>{formatElectricalBySelectedUnit('W', electricalComputed.W)}</strong></div>
+              <div className="result"><span>常用電壓</span><strong>{formatNumber(electricalComputed.V * 1000)} mV / {formatNumber(electricalComputed.V)} V</strong></div>
+              <div className="result"><span>常用電流</span><strong>{formatNumber(electricalComputed.A * 1000)} mA / {formatNumber(electricalComputed.A)} A</strong></div>
+              <div className="result"><span>常用電阻</span><strong>{formatNumber(electricalComputed.Ohm * 1000)} mΩ / {formatNumber(electricalComputed.Ohm)} Ω / {formatNumber(electricalComputed.Ohm / 1000)} kΩ</strong></div>
+              <div className="result"><span>常用功率</span><strong>{formatNumber(electricalComputed.W * 1000)} mW / {formatNumber(electricalComputed.W)} W / {formatNumber(electricalComputed.W / 1000)} kW</strong></div>
             </>}</div>
           </>
         )}

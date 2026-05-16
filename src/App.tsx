@@ -54,28 +54,15 @@ export default function App() {
 
   const pressureComputed = useMemo(() => {
     if (activeCategory?.key !== 'pressure') return null;
-    if (inputValue.trim() === '' || !Number.isFinite(numericValue) || numericValue < 0) return null;
+    if (!canConvert || numericValue < 0) return null;
 
     const chosen = fromUnit as keyof typeof toKpa;
-    const baseInput = numericValue;
-
-    if (pressureMode === 'absolute') {
-      const absoluteKpa = toKpa[chosen](baseInput);
-      if (absoluteKpa < 0) return null;
-      return { modeLabel: '絕對壓力換算', gaugeKpa: absoluteKpa - ATM_KPA, absoluteKpa, vacuumKpa: Math.max(0, ATM_KPA - absoluteKpa) };
-    }
-
-    if (pressureMode === 'vacuum') {
-      const vacuumKpa = toKpa[chosen](baseInput);
-      const gaugeKpa = -vacuumKpa;
-      const absoluteKpa = ATM_KPA + gaugeKpa;
-      return { modeLabel: '負壓換算', gaugeKpa, absoluteKpa, vacuumKpa };
-    }
-
-    const gaugeKpa = toKpa[chosen](baseInput);
+    const gaugeKpa = toKpa[chosen](numericValue);
     const absoluteKpa = gaugeKpa + ATM_KPA;
-    return { modeLabel: '表壓換算', gaugeKpa, absoluteKpa, vacuumKpa: 0 };
-  }, [activeCategory?.key, fromUnit, inputValue, numericValue, pressureMode]);
+    const vacuumKpa = Math.max(0, ATM_KPA - absoluteKpa);
+
+    return { gaugeKpa, absoluteKpa, vacuumKpa };
+  }, [activeCategory?.key, canConvert, fromUnit, numericValue]);
 
   const electricalComputed = useMemo(() => {
     const parsed: Partial<Record<ElectricalField, number>> = {};
@@ -163,21 +150,30 @@ export default function App() {
 
         {isPressure && (
           <>
-            <p className="note">請先選擇表壓、絕對壓力或負壓模式。手機不用輸入負號。</p>
-            <div className="toggle-row">{(['gauge', 'absolute', 'vacuum'] as PressureMode[]).map((m) => <button key={m} className={pressureMode === m ? 'mode-btn active' : 'mode-btn'} onClick={() => setPressureMode(m)}>{m === 'gauge' ? '表壓' : m === 'absolute' ? '絕對壓力' : '負壓'}</button>)}</div>
             <div className="controls">
               <input type="text" pattern="[0-9.]*" inputMode="decimal" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="請輸入數值（正數）" />
               <select value={fromUnit} onChange={(e) => setFromUnit(e.target.value)}>{pressureUnits.map((u) => <option key={u} value={u}>{u}</option>)}</select>
               <button onClick={() => setInputValue('')}>一鍵清除</button>
             </div>
-            <div className="results">
-              {!pressureComputed ? <p className="empty-result">請輸入有效數值（不可小於 0）</p> : <>
-                <div className="result"><span>{pressureComputed.modeLabel}</span><strong>{formatNumber(pressureComputed.gaugeKpa)} kPa (Gauge)</strong></div>
-                <div className="result"><span>對應絕對壓力</span><strong>{formatNumber(pressureComputed.absoluteKpa)} kPa (Absolute)</strong></div>
-                <div className="result"><span>真空度</span><strong>{formatNumber(Math.abs(pressureComputed.vacuumKpa))} kPa vacuum</strong></div>
-                {pressureMode === 'vacuum' && pressureComputed.vacuumKpa > ATM_KPA ? <p className="empty-result">超過理論真空，請檢查輸入值</p> : null}
-              </>}
-            </div>
+            <div className="results">{canConvert ? results.map((r) => <div key={r.unit} className="result"><span>{r.unit}</span><strong>{formatNumber(r.value)}</strong></div>) : <p className="empty-result">請輸入有效數值（不可小於 0）</p>}</div>
+
+            <section className="assist-card">
+              <h3>壓力類型輔助說明</h3>
+              <p>表壓：一般壓力錶讀值，預設使用這個。</p>
+              <p>絕對壓力：表壓 + 大氣壓。</p>
+              <p>負壓：低於大氣壓的表壓，手機不用輸入負號。</p>
+              <p>本頁主要為壓力單位換算；若為負壓，請視為真空度數值，表壓為負值。</p>
+
+              <div className="toggle-row">{(['gauge', 'absolute', 'vacuum'] as PressureMode[]).map((m) => <button key={m} className={pressureMode === m ? 'mode-btn active' : 'mode-btn'} onClick={() => setPressureMode(m)}>{m === 'gauge' ? '表壓' : m === 'absolute' ? '絕對壓力' : '負壓模式'}</button>)}</div>
+
+              {pressureComputed ? (
+                <div className="results">
+                  <div className="result"><span>表壓（Gauge）</span><strong>{formatNumber(pressureComputed.gaugeKpa)} kPa</strong></div>
+                  <div className="result"><span>絕對壓力（Absolute）</span><strong>{formatNumber(pressureComputed.absoluteKpa)} kPa</strong></div>
+                  <div className="result"><span>真空度（Vacuum）</span><strong>{formatNumber(pressureComputed.vacuumKpa)} kPa vacuum</strong></div>
+                </div>
+              ) : null}
+            </section>
           </>
         )}
 
